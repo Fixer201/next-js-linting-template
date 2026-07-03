@@ -34,7 +34,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --legacy-peer-deps
-      - run: npm run db:validate
+      - run: env $(grep -v '^#' .env.example | grep -v '^$' | xargs) npm run db:validate
       - run: npm run db:generate
 
   migration-check:
@@ -53,6 +53,6 @@ jobs:
           npx prisma migrate diff \
             --from-schema-datasource prisma/schema.prisma \
             --to-schema-datamodel prisma/schema.prisma \
-            --shadow-database-url "postgresql://dummy:dummy@localhost:5432/dummy?schema=public" \
+            --shadow-database-url "$(grep DATABASE_URL .env.example | grep -v '^#' | cut -d'=' -f2- | tr -d '"')" \
             --exit-code \
             || echo "Migration drift detected — run 'npm run db:migrate' to sync."

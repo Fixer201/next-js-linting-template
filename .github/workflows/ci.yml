@@ -65,7 +65,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --legacy-peer-deps
-      - run: npm run db:validate
+      - run: env $(grep -v '^#' .env.example | grep -v '^$' | xargs) npm run db:validate
       - run: npm run db:generate
 
   build:

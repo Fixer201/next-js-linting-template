@@ -17,7 +17,7 @@ pre-push:
     typecheck:
       run: npx tsc --noEmit --skipLibCheck
     prisma-validate:
-      run: npx prisma validate
+      run: env $(grep -v '^#' .env.example | grep -v '^$' | xargs) npx prisma validate
 post-merge:
   commands:
     install:
