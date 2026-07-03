@@ -1,0 +1,55 @@
+# CodeQL — semantic SAST from GitHub.
+# Builds a data-flow graph and finds vulnerabilities that syntax-level
+# linters (ESLint, oxlint) cannot detect: SQL injection (via Prisma raw
+# queries), XSS (via dangerouslySetInnerHTML), SSRF in server actions,
+# path traversal across function boundaries, hardcoded credentials.
+# Docs: https://codeql.github.com/
+
+name: CodeQL Analysis
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 8 * * 1' # every Monday at 08:00 UTC
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write # upload SARIF
+      actions: read # for private repo dependency graph
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.3
+        with:
+          persist-credentials: false
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@45775bd8235c68ba998cffa5171334d58593da47 # v3.28.18
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended,security-and-quality
+          config: |
+            paths-ignore:
+              - '**/*.test.ts'
+              - '**/*.test.tsx'
+              - '**/*.spec.ts'
+              - '**/*.spec.tsx'
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@45775bd8235c68ba998cffa5171334d58593da47 # v3.28.18
+        with:
+          category: '/language:${{ matrix.language }}'

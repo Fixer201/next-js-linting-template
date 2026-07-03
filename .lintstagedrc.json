@@ -1,0 +1,4 @@
+{
+  "*.{ts,tsx}": ["oxfmt --write", "oxlint --fix", "eslint --fix"],
+  "*.{css,json,md,prisma}": ["oxfmt --write"]
+}

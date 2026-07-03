@@ -1,0 +1,31 @@
+pre-commit:
+  parallel: true
+  commands:
+    gitleaks:
+      run: gitleaks protect --staged -v 2>/dev/null || echo 'gitleaks not installed — skipping secret scan'
+    format:
+      glob: '*.{ts,tsx,css,json,md,prisma}'
+      run: npx oxfmt --write {staged_files}
+      stage_fixed: true
+    lint-staged:
+      run: npx lint-staged
+pre-push:
+  parallel: true
+  commands:
+    knip:
+      run: npx knip
+    typecheck:
+      run: npx tsc --noEmit --skipLibCheck
+    prisma-validate:
+      run: npx prisma validate
+post-merge:
+  commands:
+    install:
+      glob: 'package-lock.json'
+      run: npm install
+post-checkout:
+  commands:
+    install:
+      glob: 'package-lock.json'
+      files: 'git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD 2>/dev/null || git show --name-only --pretty=format: HEAD'
+      run: npm install

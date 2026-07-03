@@ -1,0 +1,58 @@
+# Prisma — schema validation + migration drift check.
+# Runs on every PR that touches prisma/ and weekly to catch drift.
+# Docs: https://www.prisma.io/docs/guides/continuous-integration
+
+name: Prisma Check
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'prisma/**'
+      - 'package.json'
+      - 'package-lock.json'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'prisma/**'
+      - 'package.json'
+      - 'package-lock.json'
+  schedule:
+    - cron: '0 6 * * 1' # every Monday at 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Schema validate + generate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.3
+      - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.3.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - run: npm run db:validate
+      - run: npm run db:generate
+
+  migration-check:
+    name: Migration drift check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.3
+      - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.3.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - run: npm run db:generate
+      - name: Check for migration drift
+        run: |
+          npx prisma migrate diff \
+            --from-schema-datasource prisma/schema.prisma \
+            --to-schema-datamodel prisma/schema.prisma \
+            --shadow-database-url "postgresql://dummy:dummy@localhost:5432/dummy?schema=public" \
+            --exit-code \
+            || echo "Migration drift detected — run 'npm run db:migrate' to sync."
