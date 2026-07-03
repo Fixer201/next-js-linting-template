@@ -5,9 +5,7 @@ const analyzer = withBundleAnalyzer({ enabled: process.env['ANALYZE'] === 'true'
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
-  experimental: {
-    typedRoutes: true,
-  },
+  typedRoutes: true,
 }
 
 export default analyzer(nextConfig)

@@ -18,6 +18,8 @@ pre-push:
       run: npx tsc --noEmit --skipLibCheck
     prisma-validate:
       run: env $(grep -v '^#' .env.example | grep -v '^$' | xargs) npx prisma validate
+    build:
+      run: npm run build
 post-merge:
   commands:
     install:
