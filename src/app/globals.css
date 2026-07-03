@@ -30,15 +30,15 @@
 }
 
 html {
-  font-family: var(--font-sans)
-  color: var(--color-text)
-  background: var(--color-bg)
-  font-synthesis: none
-  text-rendering: optimizeLegibility
-  -webkit-font-smoothing: antialiased
-  -moz-osx-font-smoothing: grayscale
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  background: var(--color-bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  margin: 0
+  margin: 0;
 }
