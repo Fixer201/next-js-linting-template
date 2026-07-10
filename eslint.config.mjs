@@ -1,4 +1,3 @@
-import { fixupPluginRules } from '@eslint/compat'
 import jsPlugin from '@eslint/js'
 import tsParser from '@typescript-eslint/parser'
 import unicornModule from 'eslint-plugin-unicorn'
@@ -16,7 +15,6 @@ import reactRsc from 'eslint-plugin-react-rsc'
 import reactCompiler from 'eslint-plugin-react-compiler'
 import importAccess from 'eslint-plugin-import-access/flat-config'
 import prismaPlugin from '@v2nic/eslint-plugin-prisma'
-import microsoftSdl from '@microsoft/eslint-plugin-sdl'
 
 import nextCoreWebVitals from 'eslint-config-next/core-web-vitals'
 import nextTypescript from 'eslint-config-next/typescript'
@@ -117,20 +115,6 @@ const eslintConfig = [
   // Code quality + security smells: cognitive complexity, duplicate strings, bug patterns
   sonarjsPlugin.configs.recommended,
 
-  // Microsoft SDL — Security Development Lifecycle rules
-  {
-    plugins: { '@microsoft/sdl': microsoftSdl },
-    rules: {
-      '@microsoft/sdl/no-inner-html': 'error',
-      '@microsoft/sdl/no-document-write': 'error',
-      '@microsoft/sdl/no-html-method': 'error',
-      '@microsoft/sdl/no-insecure-random': 'error',
-      '@microsoft/sdl/no-insecure-url': 'warn',
-      '@microsoft/sdl/no-postmessage-star-origin': 'error',
-      '@microsoft/sdl/no-document-domain': 'error',
-    },
-  },
-
   // ═══════════════════════════════════════════════════════════════════════
   // React Layer — eslint-config-next already registers:
   //   @next/next, react, react-hooks, @typescript-eslint, import, jsx-a11y
@@ -219,6 +203,36 @@ const eslintConfig = [
           selector:
             "CallExpression[callee.object.name='globalThis'][callee.property.name='Function']",
           message: 'Dynamic function construction via globalThis.Function() is prohibited.',
+        },
+
+        // ─── SDL replacements (was @microsoft/eslint-plugin-sdl, incompatible with ESLint 10) ───
+        // no-html-method: jQuery .html() writes to DOM without sanitization
+        {
+          selector: "CallExpression[callee.type='MemberExpression'][callee.property.name='html']",
+          message:
+            'jQuery .html() writes to DOM without sanitization. Use textContent or a sanitizer.',
+        },
+        // no-insecure-url: http:// and ftp:// are insecure transports
+        {
+          selector: 'Literal[value=/^\\s*(http|ftp):\\/\\//i]',
+          message: 'Insecure URL protocol (http/ftp). Use https:// or ftps:// instead.',
+        },
+        {
+          selector: 'TemplateElement[value.raw=/^\\s*(http|ftp):\\/\\//i]',
+          message: 'Insecure URL protocol (http/ftp). Use https:// or ftps:// instead.',
+        },
+        // no-postmessage-star-origin: postMessage with '*' targetOrigin leaks data
+        {
+          selector:
+            "CallExpression[callee.type='MemberExpression'][callee.property.name='postMessage'] > Literal.Argument[value='*']",
+          message:
+            "postMessage with '*' as targetOrigin leaks data to any origin. Specify a specific origin.",
+        },
+        // no-document-domain: writing document.domain bypasses same-origin policy
+        {
+          selector:
+            "AssignmentExpression[left.type='MemberExpression'][left.object.name='document'][left.property.name='domain']",
+          message: 'Writing to document.domain bypasses same-origin policy and is prohibited.',
         },
       ],
 
