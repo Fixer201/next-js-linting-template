@@ -24,10 +24,10 @@ post-merge:
   commands:
     install:
       glob: 'package-lock.json'
-      run: npm install
+      run: npm install --legacy-peer-deps
 post-checkout:
   commands:
     install:
       glob: 'package-lock.json'
       files: 'git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD 2>/dev/null || git show --name-only --pretty=format: HEAD'
-      run: npm install
+      run: npm install --legacy-peer-deps
