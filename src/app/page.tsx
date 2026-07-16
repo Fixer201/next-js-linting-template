@@ -1,75 +1,31 @@
 import { db } from '@/lib/db'
-import { userListSchema } from '@/lib/validations/user'
+import { publicUserSelect } from '@/lib/users'
+import { toUserResponse, userListSchema } from '@/lib/validations/user'
 
-// Server Component — reads from DB and validates at the boundary with Zod.
-// Gracefully handles missing DATABASE_URL (template setup scenario).
+export const dynamic = 'force-dynamic'
+
 export default async function Home() {
-  let rawUsers: Awaited<ReturnType<typeof db.user.findMany>>
+  let users
 
   try {
-    rawUsers = await db.user.findMany({
+    const records = await db.user.findMany({
       orderBy: { createdAt: 'desc' },
+      select: publicUserSelect,
       take: 10,
     })
-  } catch {
-    return (
-      <main className="mx-auto flex min-h-screen max-w-2xl flex-col p-8">
-        <h1 className="mb-6 text-3xl font-medium tracking-tight text-text-h">
-          Next.js Linting Template
-        </h1>
-        <p className="mb-8">Max-strictness Next.js + Prisma + Tailwind starter.</p>
-        <section className="rounded-lg border border-border p-4">
-          <p className="mb-2 font-medium text-text-h">Database not configured</p>
-          <p className="mb-2 text-text">
-            Copy{' '}
-            <code className="rounded bg-code-bg px-2 py-1 font-mono text-sm">.env.example</code> to{' '}
-            <code className="rounded bg-code-bg px-2 py-1 font-mono text-sm">.env</code> and set
-            your{' '}
-            <code className="rounded bg-code-bg px-2 py-1 font-mono text-sm">DATABASE_URL</code>.
-          </p>
-          <pre className="overflow-auto rounded bg-code-bg p-4 text-sm">
-            {`cp .env.example .env
-npm run db:generate
-npm run db:migrate
-npm run db:seed`}
-          </pre>
-        </section>
-      </main>
-    )
+    users = userListSchema.parse(records.map((record) => toUserResponse(record)))
+  } catch (error: unknown) {
+    throw new Error('Failed to load users from the database', { cause: error })
   }
-
-  // Parse at the boundary — never trust raw DB output shape in app logic.
-  const parsed = userListSchema.safeParse(
-    rawUsers.map((user) => ({
-      createdAt: user.createdAt.toISOString(),
-      email: user.email,
-      id: user.id,
-      name: user.name,
-      updatedAt: user.updatedAt.toISOString(),
-    })),
-  )
-
-  if (!parsed.success) {
-    return (
-      <main className="flex min-h-screen flex-col items-center justify-center p-8">
-        <p className="text-xl text-text-h">Failed to load users</p>
-        <pre className="mt-4 overflow-auto rounded bg-code-bg p-4 text-sm">
-          {JSON.stringify(parsed.error.issues, null, 2)}
-        </pre>
-      </main>
-    )
-  }
-
-  const users = parsed.data
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col p-8">
+    <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col p-8">
       <h1 className="mb-6 text-3xl font-medium tracking-tight text-text-h">
         Next.js Linting Template
       </h1>
       <p className="mb-8">
-        Max-strictness Next.js + Prisma + Tailwind starter. Demo reads users from PostgreSQL via
-        Prisma and validates with Zod.
+        Strict Next.js, Prisma, and Tailwind starter. This page reads users from PostgreSQL and
+        validates the public response shape with Zod.
       </p>
 
       <section>
@@ -96,10 +52,10 @@ npm run db:seed`}
       </section>
 
       <section className="mt-8">
-        <h2 className="mb-4 text-xl font-medium text-text-h">Create User</h2>
+        <h2 className="mb-4 text-xl font-medium text-text-h">Create a user</h2>
         <p className="mb-2 text-text">
-          POST to <code className="rounded bg-code-bg px-2 py-1 font-mono text-sm">/api/users</code>{' '}
-          with JSON body:
+          Send JSON to{' '}
+          <code className="rounded bg-code-bg px-2 py-1 font-mono text-sm">POST /api/users</code>:
         </p>
         <pre className="overflow-auto rounded bg-code-bg p-4 text-sm">
           {`{

@@ -1,0 +1,6 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Next.js build output contains ephemeral preview and RSC encryption keys"
+paths = ['''^\.next/''']

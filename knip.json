@@ -1,19 +1,7 @@
 {
   "$schema": "./node_modules/knip/schema.json",
-  "entry": ["src/lib/utils.ts", "src/lib/db.ts"],
   "project": ["src/**/*.{ts,tsx}", "prisma/**/*.ts"],
-  "ignoreDependencies": [
-    "@babel/core",
-    "@eslint/eslintrc",
-    "@rolldown/plugin-babel",
-    "@types/babel__core",
-    "@typescript-eslint/eslint-plugin",
-    "eslint-plugin-import",
-    "eslint-plugin-jsx-a11y",
-    "eslint-plugin-react",
-    "eslint-plugin-react-hooks",
-    "type-fest"
-  ],
+  "ignoreDependencies": ["@prisma/client", "@types/pg", "pg"],
   "rules": {
     "files": "error",
     "dependencies": "error",

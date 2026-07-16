@@ -75,7 +75,6 @@
     "no-shadow-restricted-names": "error",
     "no-sparse-arrays": "error",
     "no-this-before-super": "error",
-    "no-undef": "error",
     "no-unsafe-finally": "error",
     "no-unsafe-negation": "error",
     "no-unused-labels": "error",
@@ -217,7 +216,14 @@
     "oxc/no-async-endpoint-handlers": "off",
     "oxc/no-const-enum": "off"
   },
-  "ignorePatterns": [".next/**", "node_modules/**", "out/**", "*.mjs", "*.config.ts"],
+  "ignorePatterns": [
+    ".next/**",
+    "coverage/**",
+    "node_modules/**",
+    "out/**",
+    "public/**",
+    "src/generated/**"
+  ],
   "overrides": [
     {
       "files": [

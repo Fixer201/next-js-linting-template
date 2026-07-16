@@ -1,11 +1,22 @@
 import type { NextConfig } from 'next'
-import withBundleAnalyzer from '@next/bundle-analyzer'
 
-const analyzer = withBundleAnalyzer({ enabled: process.env['ANALYZE'] === 'true' })
+const securityHeaders = [
+  { key: 'Permissions-Policy', value: 'camera=(), geolocation=(), microphone=()' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'X-Frame-Options', value: 'DENY' },
+]
 
 const nextConfig: NextConfig = {
+  headers() {
+    return Promise.resolve([{ headers: securityHeaders, source: '/:path*' }])
+  },
+  poweredByHeader: false,
   reactCompiler: true,
+  turbopack: {
+    root: import.meta.dirname,
+  },
   typedRoutes: true,
 }
 
-export default analyzer(nextConfig)
+export default nextConfig

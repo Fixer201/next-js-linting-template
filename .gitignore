@@ -30,8 +30,8 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env — only ignore .env, keep .env.example committed
-.env
+# environment files may contain credentials
+.env*
 !.env.example
 
 # vercel
@@ -42,8 +42,10 @@ yarn-error.log*
 next-env.d.ts
 
 # prisma
-/prisma/migrations/dev.db
-/prisma/migrations/*.db-journal
+/src/generated/prisma/
+
+# tooling
+.eslintcache
 
 # editor
 .idea

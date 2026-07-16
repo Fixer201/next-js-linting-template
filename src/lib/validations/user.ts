@@ -1,18 +1,38 @@
 import { z } from 'zod'
 
-// Schema for creating a user — parse at the boundary (API route / server action).
-export const createUserSchema = z.object({
-  email: z.email('Invalid email format'),
-  name: z.string().min(1, 'Name is required').max(100, 'Name too long').optional(),
-})
+export const createUserSchema = z
+  .object({
+    email: z.string().trim().toLowerCase().pipe(z.email('Invalid email format')),
+    name: z.string().trim().min(1, 'Name is required').max(100, 'Name too long').optional(),
+  })
+  .strict()
 
-// Schema for a single user (response shape from Prisma).
-export const userSchema = z.object({
-  createdAt: z.string(),
-  email: z.string(),
-  id: z.string(),
-  name: z.string().nullable(),
-  updatedAt: z.string(),
-})
+export const userSchema = z
+  .object({
+    createdAt: z.iso.datetime(),
+    email: z.email(),
+    id: z.uuidv7(),
+    name: z.string().max(100).nullable(),
+    updatedAt: z.iso.datetime(),
+  })
+  .strict()
 
-export const userListSchema = z.array(userSchema)
+export const userListSchema = z.array(userSchema).max(100)
+
+interface UserRecord {
+  createdAt: Date
+  email: string
+  id: string
+  name: null | string
+  updatedAt: Date
+}
+
+export function toUserResponse(user: UserRecord) {
+  return userSchema.parse({
+    createdAt: user.createdAt.toISOString(),
+    email: user.email,
+    id: user.id,
+    name: user.name,
+    updatedAt: user.updatedAt.toISOString(),
+  })
+}
