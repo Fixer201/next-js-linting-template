@@ -1,6 +1,16 @@
-import { PrismaClient } from '@prisma/client'
+import 'dotenv/config'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaClient } from '../src/generated/prisma/client'
 
-const prisma = new PrismaClient()
+const databaseUrl = process.env['DATABASE_URL']
+
+if (databaseUrl === undefined || databaseUrl.length === 0) {
+  throw new Error('DATABASE_URL is required to seed the database')
+}
+
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: databaseUrl }),
+})
 
 const users = [
   { email: 'alice@example.com', name: 'Alice' },
@@ -11,9 +21,10 @@ async function main() {
   await Promise.all(
     users.map((user) =>
       prisma.user.upsert({
-        where: { email: user.email },
-        update: {},
         create: user,
+        select: { id: true },
+        update: {},
+        where: { email: user.email },
       }),
     ),
   )
@@ -24,8 +35,8 @@ async function main() {
 try {
   await main()
 } catch (error: unknown) {
-  console.error(error)
-  process.exit(1)
+  console.error('Failed to seed the database:', error)
+  process.exitCode = 1
 } finally {
   await prisma.$disconnect()
 }

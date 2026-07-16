@@ -15,8 +15,9 @@
   --font-mono: var(--font-geist-mono), ui-monospace, Consolas, monospace;
 }
 
-@variant dark {
+@media (prefers-color-scheme: dark) {
   :root {
+    color-scheme: dark;
     --color-text: #9ca3af;
     --color-text-h: #f3f4f6;
     --color-bg: #16171d;
@@ -30,6 +31,7 @@
 }
 
 html {
+  color-scheme: light;
   font-family: var(--font-sans);
   color: var(--color-text);
   background: var(--color-bg);

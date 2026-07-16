@@ -1,77 +1,70 @@
 import { NextResponse } from 'next/server'
+import { Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
-import { createUserSchema, userSchema } from '@/lib/validations/user'
+import { publicUserSelect } from '@/lib/users'
+import { createUserSchema, toUserResponse, userListSchema } from '@/lib/validations/user'
 
-// POST /api/users — create a user.
-// Demonstrates the "parse at boundary" pattern:
-// 1. Validate request body with Zod before it touches Prisma.
-// 2. Insert via Prisma.
-// 3. Validate the response shape with Zod before returning.
+const JSON_CONTENT_TYPE_PATTERN = /^application\/json(?:\s*;|$)/iu
+const NO_STORE_HEADERS = { 'Cache-Control': 'no-store' }
+
+function errorResponse(error: string, status: number) {
+  return NextResponse.json({ error }, { headers: NO_STORE_HEADERS, status })
+}
+
 export async function POST(request: Request) {
+  const contentType = request.headers.get('content-type')
+
+  if (contentType === null || !JSON_CONTENT_TYPE_PATTERN.test(contentType)) {
+    return errorResponse('Content-Type must be application/json', 415)
+  }
+
   let body: unknown
   try {
     body = await request.json()
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    return errorResponse('Invalid JSON body', 400)
   }
 
   const parsed = createUserSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json(
       { error: 'Validation failed', issues: parsed.error.issues },
-      { status: 422 },
+      { headers: NO_STORE_HEADERS, status: 422 },
     )
   }
 
   try {
     const created = await db.user.create({
       data: { email: parsed.data.email, name: parsed.data.name ?? null },
+      select: publicUserSelect,
     })
 
-    const response = userSchema.safeParse({
-      createdAt: created.createdAt.toISOString(),
-      email: created.email,
-      id: created.id,
-      name: created.name,
-      updatedAt: created.updatedAt.toISOString(),
+    return NextResponse.json(toUserResponse(created), {
+      headers: NO_STORE_HEADERS,
+      status: 201,
     })
-
-    if (!response.success) {
-      return NextResponse.json({ error: 'Response validation failed' }, { status: 500 })
-    }
-
-    return NextResponse.json(response.data, { status: 201 })
   } catch (error: unknown) {
-    // Prisma unique constraint violation (P2002) — email already exists.
-    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') {
-      return NextResponse.json({ error: 'A user with this email already exists' }, { status: 409 })
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return errorResponse('A user with this email already exists', 409)
     }
 
     console.error('Failed to create user:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return errorResponse('Internal server error', 500)
   }
 }
 
-// GET /api/users — list users.
 export async function GET() {
-  const rawUsers = await db.user.findMany({
-    orderBy: { createdAt: 'desc' },
-    take: 100,
-  })
+  try {
+    const records = await db.user.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: publicUserSelect,
+      take: 100,
+    })
+    const users = userListSchema.parse(records.map((record) => toUserResponse(record)))
 
-  const response = userSchema.array().safeParse(
-    rawUsers.map((user) => ({
-      createdAt: user.createdAt.toISOString(),
-      email: user.email,
-      id: user.id,
-      name: user.name,
-      updatedAt: user.updatedAt.toISOString(),
-    })),
-  )
-
-  if (!response.success) {
-    return NextResponse.json({ error: 'Response validation failed' }, { status: 500 })
+    return NextResponse.json(users, { headers: NO_STORE_HEADERS })
+  } catch (error: unknown) {
+    console.error('Failed to list users:', error)
+    return errorResponse('Internal server error', 500)
   }
-
-  return NextResponse.json(response.data)
 }
